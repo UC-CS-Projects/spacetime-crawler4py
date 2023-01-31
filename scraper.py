@@ -1,4 +1,4 @@
-import re, lxml
+import re, lxml, nltk
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
@@ -24,14 +24,24 @@ def extract_next_links(url, resp):
 
     # Craete soupt object --> goes through page and finds html info    
     soupt = BeautifulSoup(resp.raw_response.content, "lxml")
+    raw_text = soupt.get_text() #gets all the text from the url, returns a string
+    tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
 
     # Create list and set objects to store hyperlinks : nonunqiue, unique
     hyperlink_list = list()
     visited_set = set()
 
-    # Go through soupt list, get only hyperlinks 
     # Example soupt value -> [<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>]
-    for link in soupt.find_all("a"):
+    unparsed_href_list = soupt.find_all("a")
+    num_of_headings = soupt.find_all(["h1", "h2", "h3"])
+    #our definition of a webpage with low information value would be:
+        #under 100 words AND no headings AND less than 2 hyperlinks
+    if len(tokens) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2: #checking if the page is a low value information page
+        print("page is low information value")
+        return list()
+
+    #go through soupt list, get only hyperlinks 
+    for link in unparsed_href_list:
         if link not in visited_set:
             hyperlink_list.append(link.get("href"))
             visited_set.add(link)
@@ -46,6 +56,8 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        #check if domain is correct
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
