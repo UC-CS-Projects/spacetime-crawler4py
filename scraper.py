@@ -22,10 +22,17 @@ def extract_next_links(url, resp):
         print(resp.error) 
         return list()
 
-    # Craete soupt object --> goes through page and finds html info    
+    #stop words list from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
+    stops = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you','your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his','himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself','they', 'them', 'their', 'theirs', 'themselves', 'what', 'which','who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are','was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having','do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if','or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for','with', 'about', 'against', 'between', 'into', 'through', 'during','before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in','out', 'on', 'off', 'over', 'under', 'again', 'further', 'then','once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any','both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no','nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's','t', 'can', 'will', 'just', 'don', 'should', 'now', 'id', 'var','function', 'js', 'd', 'script', '\'script', 'fjs', 'document', 'r','b', 'g', 'e', '\'s', 'c', 'f', 'h', 'l', 'k']
+
+    # Create soupt object --> goes through page and finds html info    
     soupt = BeautifulSoup(resp.raw_response.content, "lxml")
     raw_text = soupt.get_text() #gets all the text from the url, returns a string
     tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
+    text = nltk.Text(tokens) #code from line 32-35 from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
+    nonPunct = re.compile('.*[A-Za-z].*') 
+    raw_words = [w for w in text if nonPunct.match(w)] #list of every single word without punctuation on the webpage
+    no_stop_words = [w for w in raw_words if w.lower() not in stops] #list of high-value words excluding common, nondescriptive words (conjunctions)
 
     # Create list and set objects to store hyperlinks : nonunqiue, unique
     hyperlink_list = list()
@@ -36,22 +43,17 @@ def extract_next_links(url, resp):
     num_of_headings = soupt.find_all(["h1", "h2", "h3"])
     #our definition of a webpage with low information value would be:
         #under 100 words AND no headings AND less than 2 hyperlinks
-    if len(tokens) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2: #checking if the page is a low value information page
+    if (len(no_stop_words) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2) or (len(resp.raw_response.content) > 500): #checking if the page is a low value information page
         print("page is low information value")
         return list()
-
-    reg_ex_compile = re.compile(r'^(\d+) bytes$')
-    da_string = soupt.find(text=reg_ex_compile)
-    size = reg_ex_compile.match(da_string.string).group(1)
 
     #go through soupt list, get only hyperlinks 
     for link in unparsed_href_list:
         if link not in visited_set:
             parsed = urlparse(link)
             parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
-            if int(size) > 1000:
-                hyperlink_list.append(link.get("href"))
-                visited_set.add(link)
+            hyperlink_list.append(link.get("href"))
+            visited_set.add(link)
 
     return hyperlink_list
 
