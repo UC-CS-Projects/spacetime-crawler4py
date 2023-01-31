@@ -1,6 +1,7 @@
 import re, lxml, nltk
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+nltk.download('punkt')
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -23,7 +24,7 @@ def extract_next_links(url, resp):
         return list()
 
     soupt = BeautifulSoup(resp.raw_response.content, "lxml") #create beautiful soup object
-    no_stop_words = tokenize(resp) #call tokenize function to get all the valuable words on the webpage, as a list
+    no_stop_words = cust_tokenize(resp) #call tokenize function to get all the valuable words on the webpage, as a list
 
     # Create list and set objects to store hyperlinks : nonunqiue, unique
     hyperlink_list = list()
@@ -34,17 +35,23 @@ def extract_next_links(url, resp):
     num_of_headings = soupt.find_all(["h1", "h2", "h3"])
     #our definition of a webpage with low information value would be:
         #under 100 words AND no headings AND less than 2 hyperlinks
-    if (len(no_stop_words) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2) or (len(resp.raw_response.content) > 500): #checking if the page is a low value information page
+    if (len(no_stop_words) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2) or (len(resp.raw_response.content) < 500): #checking if the page is a low value information page
+        print(len(no_stop_words))
+        print(len(num_of_headings) == 0)
+        print(len(unparsed_href_list))
+        print(len(resp.raw_response.content))
         print("page is low information value")
         return list()
 
     #go through soupt list, get only hyperlinks 
     for link in unparsed_href_list:
-        if link not in visited_set:
-            parsed = urlparse(link)
+        web_url_string = link.href
+        if web_url_string not in visited_set:
+            #print(web_url_string)
+            parsed = urlparse(web_url_string)
             parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
-            hyperlink_list.append(link.get("href"))
-            visited_set.add(link)
+            hyperlink_list.append(web_url_string)
+            visited_set.add(web_url_string)
 
     return hyperlink_list
 
@@ -76,7 +83,7 @@ def is_valid(url):
         print ("TypeError for ", parsed)
         raise
 
-def tokenize(resp):
+def cust_tokenize(resp):
     #stop words list from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
     stops = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you','your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his','himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself','they', 'them', 'their', 'theirs', 'themselves', 'what', 'which','who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are','was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having','do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if','or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for','with', 'about', 'against', 'between', 'into', 'through', 'during','before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in','out', 'on', 'off', 'over', 'under', 'again', 'further', 'then','once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any','both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no','nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's','t', 'can', 'will', 'just', 'don', 'should', 'now', 'id', 'var','function', 'js', 'd', 'script', '\'script', 'fjs', 'document', 'r','b', 'g', 'e', '\'s', 'c', 'f', 'h', 'l', 'k']
     soupt = BeautifulSoup(resp.raw_response.content, "lxml")

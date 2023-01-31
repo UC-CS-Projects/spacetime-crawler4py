@@ -22,8 +22,8 @@ class Worker(Thread):
 
     def find_intersection(self, list_of_resp, curr):
         for i in list_of_resp:
-            tok1 = scraper.tokenize(i)
-            tok2 = scraper.tokenize(curr) 
+            tok1 = scraper.cust_tokenize(i)
+            tok2 = scraper.cust_tokenize(curr) 
             freq1 = Counter(tok1)
             freq2 = Counter(tok2)
             keys1 = set(freq1) 
