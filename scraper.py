@@ -22,17 +22,8 @@ def extract_next_links(url, resp):
         print(resp.error) 
         return list()
 
-    #stop words list from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
-    stops = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you','your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his','himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself','they', 'them', 'their', 'theirs', 'themselves', 'what', 'which','who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are','was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having','do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if','or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for','with', 'about', 'against', 'between', 'into', 'through', 'during','before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in','out', 'on', 'off', 'over', 'under', 'again', 'further', 'then','once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any','both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no','nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's','t', 'can', 'will', 'just', 'don', 'should', 'now', 'id', 'var','function', 'js', 'd', 'script', '\'script', 'fjs', 'document', 'r','b', 'g', 'e', '\'s', 'c', 'f', 'h', 'l', 'k']
-
-    # Create soupt object --> goes through page and finds html info    
-    soupt = BeautifulSoup(resp.raw_response.content, "lxml")
-    raw_text = soupt.get_text() #gets all the text from the url, returns a string
-    tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
-    text = nltk.Text(tokens) #code from line 32-35 from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
-    nonPunct = re.compile('.*[A-Za-z].*') 
-    raw_words = [w for w in text if nonPunct.match(w)] #list of every single word without punctuation on the webpage
-    no_stop_words = [w for w in raw_words if w.lower() not in stops] #list of high-value words excluding common, nondescriptive words (conjunctions)
+    soupt = BeautifulSoup(resp.raw_response.content, "lxml") #create beautiful soup object
+    no_stop_words = tokenize(resp) #call tokenize function to get all the valuable words on the webpage, as a list
 
     # Create list and set objects to store hyperlinks : nonunqiue, unique
     hyperlink_list = list()
@@ -84,3 +75,15 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+def tokenize(resp):
+    #stop words list from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
+    stops = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you','your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his','himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself','they', 'them', 'their', 'theirs', 'themselves', 'what', 'which','who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are','was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having','do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if','or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for','with', 'about', 'against', 'between', 'into', 'through', 'during','before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in','out', 'on', 'off', 'over', 'under', 'again', 'further', 'then','once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any','both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no','nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's','t', 'can', 'will', 'just', 'don', 'should', 'now', 'id', 'var','function', 'js', 'd', 'script', '\'script', 'fjs', 'document', 'r','b', 'g', 'e', '\'s', 'c', 'f', 'h', 'l', 'k']
+    soupt = BeautifulSoup(resp.raw_response.content, "lxml")
+    raw_text = soupt.get_text() #gets all the text from the url, returns a string
+    tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
+    text = nltk.Text(tokens) #code from line 32-35 from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
+    nonPunct = re.compile('.*[A-Za-z].*') 
+    raw_words = [w for w in text if nonPunct.match(w)] #list of every single word without punctuation on the webpage
+    no_stop_words = [w for w in raw_words if w.lower() not in stops] #list of high-value words excluding common, nondescriptive words (conjunctions)
+    return no_stop_words
