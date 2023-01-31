@@ -40,11 +40,18 @@ def extract_next_links(url, resp):
         print("page is low information value")
         return list()
 
+    reg_ex_compile = re.compile(r'^(\d+) bytes$')
+    da_string = soupt.find(text=reg_ex_compile)
+    size = reg_ex_compile.match(da_string.string).group(1)
+
     #go through soupt list, get only hyperlinks 
     for link in unparsed_href_list:
         if link not in visited_set:
-            hyperlink_list.append(link.get("href"))
-            visited_set.add(link)
+            parsed = urlparse(link)
+            parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
+            if int(size) > 1000:
+                hyperlink_list.append(link.get("href"))
+                visited_set.add(link)
 
     return hyperlink_list
 
@@ -52,12 +59,16 @@ def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
+    valid_domain_names = (".ics.uci.edu/", ".cs.uci.edu/", ".informatics.uci.edu/", ".stat.uci.edu/")
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
         #check if domain is correct
-        
+        for i in valid_domain_names:
+            if i not in parsed.hostname:
+                return False
+        parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
