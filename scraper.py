@@ -49,7 +49,7 @@ def extract_next_links(url, resp):
         #print(web_url_string)
         if web_url_string not in visited_set:
             parsed = urlparse(web_url_string)
-            parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
+            web_url_string = parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
             hyperlink_list.append(web_url_string)
             visited_set.add(web_url_string)
 

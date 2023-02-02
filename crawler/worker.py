@@ -20,16 +20,21 @@ class Worker(Thread):
         assert {getsource(scraper).find(req) for req in {"from urllib.request import", "import urllib.request"}} == {-1}, "Do not use urllib.request in scraper.py"
         super().__init__(daemon=True)
 
-    def find_intersection(self, list_of_resp, curr):
+    def find_intersection(self, list_of_resp, curr_resp):
+        if curr_resp.status != 200:
+            return False# This webpage's status is not 200 so should not be added.
         for i in list_of_resp:
             tok1 = scraper.cust_tokenize(i)
-            tok2 = scraper.cust_tokenize(curr) 
+            tok2 = scraper.cust_tokenize(curr_resp) 
             freq1 = Counter(tok1)
             freq2 = Counter(tok2)
             keys1 = set(freq1) 
             keys2 = set(freq2) 
             inter = keys1.intersection(keys2)
-            if len(inter) > 200:
+            #Need to check if exact duplicate first
+            if len(inter) == len(keys1):
+                return False
+            if len(inter) > 1000:
                 return False #false means this url is essentially a duplicate webpage
         return True
         
