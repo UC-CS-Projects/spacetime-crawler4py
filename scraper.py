@@ -1,7 +1,6 @@
 import re, lxml, nltk
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
-nltk.download('punkt')
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -45,14 +44,16 @@ def extract_next_links(url, resp):
 
     #go through soupt list, get only hyperlinks 
     for link in unparsed_href_list:
-        web_url_string = link.href
+        web_url_string = link.get('href')
+        #print(link)
+        #print(web_url_string)
         if web_url_string not in visited_set:
-            #print(web_url_string)
             parsed = urlparse(web_url_string)
             parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
             hyperlink_list.append(web_url_string)
             visited_set.add(web_url_string)
 
+    #print(hyperlink_list)
     return hyperlink_list
 
 def is_valid(url):
@@ -65,10 +66,15 @@ def is_valid(url):
         if parsed.scheme not in set(["http", "https"]):
             return False
         #check if domain is correct
+        in_domain = []
         for i in valid_domain_names:
-            if i not in parsed.hostname:
-                return False
-        parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
+            #print(parsed.hostname)
+            in_domain.append(i in parsed.geturl())
+
+        if not any(in_domain):
+            #print(url, in_domain)
+            return False
+        #parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
