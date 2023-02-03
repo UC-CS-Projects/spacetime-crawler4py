@@ -32,7 +32,7 @@ class Worker(Thread):
             keys2 = set(freq2) 
             inter = keys1.intersection(keys2)
             #Need to check if exact duplicate first
-            if len(inter) == len(keys1):
+            if len(inter) == len(keys1) or len(inter) == len(keys2):
                 return False
             if len(inter) > 1000:
                 return False #false means this url is essentially a duplicate webpage

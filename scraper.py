@@ -1,4 +1,5 @@
 import re, lxml, nltk
+nltk.download('punkt')
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
@@ -35,25 +36,18 @@ def extract_next_links(url, resp):
     #our definition of a webpage with low information value would be:
         #under 100 words AND no headings AND less than 2 hyperlinks
     if (len(no_stop_words) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2) or (len(resp.raw_response.content) < 500): #checking if the page is a low value information page
-        print(len(no_stop_words))
-        print(len(num_of_headings) == 0)
-        print(len(unparsed_href_list))
-        print(len(resp.raw_response.content))
         print("page is low information value")
         return list()
 
     #go through soupt list, get only hyperlinks 
     for link in unparsed_href_list:
         web_url_string = link.get('href')
-        #print(link)
-        #print(web_url_string)
         if web_url_string not in visited_set:
             parsed = urlparse(web_url_string)
-            web_url_string = parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
+            parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
             hyperlink_list.append(web_url_string)
             visited_set.add(web_url_string)
 
-    #print(hyperlink_list)
     return hyperlink_list
 
 def is_valid(url):
