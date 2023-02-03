@@ -3,6 +3,9 @@ nltk.download('punkt')
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from utils.download import download
+import urllib.robotparser
+
+
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
