@@ -38,8 +38,10 @@ class Worker(Thread):
             #Need to check if exact duplicate first
             if len(inter) == len(keys1) or len(inter) == len(keys2):
                 return False
-            if len(inter) > 1000:
-                return False #false means this url is essentially a duplicate webpage
+            if len(inter) / len(keys1.union(keys2)) > 0.8:
+                return False
+            #if len(inter) > 1000:
+            #    return False #false means this url is essentially a duplicate webpage
         return True
         
     def run(self):
