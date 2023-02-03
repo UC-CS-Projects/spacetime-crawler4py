@@ -66,8 +66,9 @@ class Worker(Thread):
             if self.find_intersection(list_of_resp, resp): #call find_intersection to detect duplicate webpages
                 list_of_resp.append(resp) #IN THE CASE IT IS NOT A DUPLICATE, APPEND THE NEW UNIQUE WEBPAGE
                 for scraped_url in scraped_urls:
-                    self.frontier.add_url(scraped_url)
-                    new_visited_links.add(scraped_url) #should handle infinite traps. does not account for session IDs and URL
+                    if scraped_url in not new_visited_links:
+                        self.frontier.add_url(scraped_url)
+                        new_visited_links.add(scraped_url) #should handle infinite traps. does not account for session IDs and URL
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
     
