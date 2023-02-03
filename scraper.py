@@ -23,6 +23,7 @@ def extract_next_links(url, resp):
         # Error case for any pages with status codes not = 200
         print(resp.error) 
         return list()
+    
 
     #soupt = BeautifulSoup(resp.raw_response.content, "lxml") #create beautiful soup object
     soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
@@ -45,6 +46,8 @@ def extract_next_links(url, resp):
     #go through soupt list, get only hyperlinks 
     for link in unparsed_href_list:
         web_url_string = link.get('href')
+        if not web_url_string:
+            continue
         defrag_url = web_url_string.split("#")[0]
         if defrag_url not in visited_set:
             parsed = urlparse(defrag_url)
@@ -72,6 +75,18 @@ def is_valid(url):
         if not any(in_domain):
             #print(url, in_domain)
             return False
+
+
+        #Check if adhears to robot.txt file 
+        rp = urllib.robotparser.RobotFileParser()
+        robot_url = "https://"+ parsed.hostname + '/robots.txt'
+        rp.set_url(robot_url)
+        rp.read()
+        #If true than keep validating
+        if not rp.can_fetch("*", parsed.geturl()):
+            return False
+
+
         #parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -101,7 +116,6 @@ def cust_tokenize(resp):
 
 
 def robots_text_file(url, domains, config, logger) -> bool:
-
 
     parsed = urlparse(url)
     dom = parsed.hostname

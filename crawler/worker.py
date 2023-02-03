@@ -9,6 +9,7 @@ import nltk, re
 from collections import Counter
 import PartA, PartB
 import urllib.robotparser
+from urllib.parse import urlparse
 
 
 
@@ -46,7 +47,7 @@ class Worker(Thread):
         list_of_resp = []
         new_visited_links = set()
 
-        valid_domains = {}# keys will be the unique subdomains. #values would be a robot parser object
+        valid_domains = {}# keys will be the unique subdomains. #values would be a tuple. (sitemaps, disallow List, DISALLOWED Entire domain)
 
         while True:
             tbd_url = self.frontier.get_tbd_url()
@@ -58,18 +59,6 @@ class Worker(Thread):
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
             
-
-            parsed = urlparse(url)
-            dom = parsed.hostname
-            if dom in valid_domains:
-
-                print("indomain")
-            else:
-                rp = urllib.robotparser.RobotFileParser()
-                robot_url = "https://"+ parsed.hostname + '/robots.txt'
-                rp.set_url(robot_url)
-                rp.read()
-
             #if scraper.robots_text_file(tbd_url, valid_domains, self.config, self.logger):
             scraped_urls = scraper.scraper(tbd_url, resp)
             if self.find_intersection(list_of_resp, resp): #call find_intersection to detect duplicate webpages
