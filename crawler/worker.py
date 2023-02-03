@@ -8,6 +8,9 @@ import time
 import nltk, re
 from collections import Counter
 import PartA, PartB
+import urllib.robotparser
+
+
 
 
 class Worker(Thread):
@@ -42,6 +45,9 @@ class Worker(Thread):
         #visited_webpages = set()
         list_of_resp = []
         new_visited_links = set()
+
+        valid_domains = {}# keys will be the unique subdomains. #values would be a robot parser object
+
         while True:
             tbd_url = self.frontier.get_tbd_url()
             if not tbd_url:
@@ -51,6 +57,20 @@ class Worker(Thread):
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
+            
+
+            parsed = urlparse(url)
+            dom = parsed.hostname
+            if dom in valid_domains:
+
+                print("indomain")
+            else:
+                rp = urllib.robotparser.RobotFileParser()
+                robot_url = "https://"+ parsed.hostname + '/robots.txt'
+                rp.set_url(robot_url)
+                rp.read()
+
+            #if scraper.robots_text_file(tbd_url, valid_domains, self.config, self.logger):
             scraped_urls = scraper.scraper(tbd_url, resp)
             if self.find_intersection(list_of_resp, resp): #call find_intersection to detect duplicate webpages
                 list_of_resp.append(resp) #IN THE CASE IT IS NOT A DUPLICATE, APPEND THE NEW UNIQUE WEBPAGE

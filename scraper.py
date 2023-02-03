@@ -2,6 +2,7 @@ import re, lxml, nltk
 nltk.download('punkt')
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from utils.download import download
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -23,7 +24,9 @@ def extract_next_links(url, resp):
         print(resp.error) 
         return list()
 
-    soupt = BeautifulSoup(resp.raw_response.content, "lxml") #create beautiful soup object
+    #soupt = BeautifulSoup(resp.raw_response.content, "lxml") #create beautiful soup object
+    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
+
     no_stop_words = cust_tokenize(resp) #call tokenize function to get all the valuable words on the webpage, as a list
 
     # Create list and set objects to store hyperlinks : nonunqiue, unique
@@ -55,7 +58,7 @@ def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
-    valid_domain_names = (".ics.uci.edu/", ".cs.uci.edu/", ".informatics.uci.edu/", ".stat.uci.edu/")
+    valid_domain_names = [".ics.uci.edu/", ".cs.uci.edu/", ".informatics.uci.edu/", ".stat.uci.edu/"]
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
@@ -87,7 +90,7 @@ def is_valid(url):
 def cust_tokenize(resp):
     #stop words list from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
     stops = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you','your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his','himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself','they', 'them', 'their', 'theirs', 'themselves', 'what', 'which','who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are','was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having','do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if','or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for','with', 'about', 'against', 'between', 'into', 'through', 'during','before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in','out', 'on', 'off', 'over', 'under', 'again', 'further', 'then','once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any','both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no','nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's','t', 'can', 'will', 'just', 'don', 'should', 'now', 'id', 'var','function', 'js', 'd', 'script', '\'script', 'fjs', 'document', 'r','b', 'g', 'e', '\'s', 'c', 'f', 'h', 'l', 'k']
-    soupt = BeautifulSoup(resp.raw_response.content, "lxml")
+    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
     raw_text = soupt.get_text() #gets all the text from the url, returns a string
     tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
     text = nltk.Text(tokens) #code from line 32-35 from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
@@ -95,3 +98,58 @@ def cust_tokenize(resp):
     raw_words = [w for w in text if nonPunct.match(w)] #list of every single word without punctuation on the webpage
     no_stop_words = [w for w in raw_words if w.lower() not in stops] #list of high-value words excluding common, nondescriptive words (conjunctions)
     return no_stop_words
+
+
+def robots_text_file(url, domains, config, logger) -> bool:
+
+
+    parsed = urlparse(url)
+    dom = parsed.hostname
+    if dom in domains:
+        print("indomain")
+        _,disallows, entire_domain = domains[dom]
+        if not entire_domain:
+            return False#IF there is a "/" we would be disallowed on the entire subdomain
+
+        for i in disallows:
+            if i in parsed.geturl():
+                return False# there is a disallowed website
+
+        return True
+        
+    else:
+        rp = urllib.robotparser.RobotFileParser()
+        robot_url = "https://"+ parsed.hostname + '/robots.txt'
+
+        rp.set_url(robot_url)
+        rp.read()
+    
+        #roblox = download(robot_url, config, logger)
+
+#        if roblox.status != 200:
+#            return True
+        
+        #parsed_roblox = BeautifulSoup(roblox.raw_response.content.decode('utf-8', 'ignore'), "lxml")
+        #print(parsed_roblox)
+        #roblox_txt = parsed_roblox.get_text() #returns /robot.txt as a string
+        #print(roblox_txt)
+        #roblox_splitted = roblox_txt.splitlines()
+        #print(roblox_splitted)
+        return True
+
+    #Parse the url. grab the hostname/domain-  check if its in the valid domain
+        #if it's not
+            #add the new subdomain into the unique subdomain list.
+            #determine if robots.txt file exist
+                #Parse if it it does. Adding all of the disallows and sitemaps respectively
+                #check if / is in disallow, change respectivly value
+                #Validate
+            #not continue
+        #It is.
+            #Validate
+
+        #Validate
+            #check if allowed to go in website
+            #check all disallowed list against url. contuine or don't contunie
+    
+    pass
