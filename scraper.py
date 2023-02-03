@@ -81,13 +81,16 @@ def is_valid(url):
 
 
         #Check if adhears to robot.txt file 
-        rp = urllib.robotparser.RobotFileParser()
-        robot_url = "https://"+ parsed.hostname + '/robots.txt'
-        rp.set_url(robot_url)
-        rp.read()
-        #If true than keep validating
-        if not rp.can_fetch("*", parsed.geturl()):
-            return False
+        try:
+            rp = urllib.robotparser.RobotFileParser()
+            robot_url = parsed.scheme+ "://"+ parsed.hostname + '/robots.txt'
+            rp.set_url(robot_url)
+            rp.read()
+            #If true than keep validating
+            if not rp.can_fetch("*", parsed.geturl()):
+                return False
+        except:
+            pass
 
 
         #parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
