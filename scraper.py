@@ -42,11 +42,12 @@ def extract_next_links(url, resp):
     #go through soupt list, get only hyperlinks 
     for link in unparsed_href_list:
         web_url_string = link.get('href')
-        if web_url_string not in visited_set:
-            parsed = urlparse(web_url_string)
+        defrag_url = web_url_string.split("#")[0]
+        if defrag_url not in visited_set:
+            parsed = urlparse(defrag_url)
             parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
-            hyperlink_list.append(web_url_string)
-            visited_set.add(web_url_string)
+            hyperlink_list.append(defrag_url)
+            visited_set.add(defrag_url)
 
     return hyperlink_list
 
