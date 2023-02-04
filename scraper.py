@@ -5,8 +5,6 @@ from urllib.parse import urlparse
 from utils.download import download
 import urllib.robotparser
 
-
-
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
@@ -64,7 +62,7 @@ def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
-    valid_domain_names = [".informatics.uci.edu/", ".stat.uci.edu/"]
+    valid_domain_names = [".stat.uci.edu/", ".ics.uci.edu/", ".cs.uci.edu/", ".informatics.uci.edu/"]
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
@@ -80,7 +78,7 @@ def is_valid(url):
             return False
 
 
-        #Check if adhears to robot.txt file 
+        #Check if adheres to robot.txt file 
         try:
             rp = urllib.robotparser.RobotFileParser()
             robot_url = parsed.scheme+ "://"+ parsed.hostname + '/robots.txt'
@@ -93,7 +91,7 @@ def is_valid(url):
             pass
             
         #calendar stuff
-        if re.search('^.*calendar.*$', url):
+        if re.search('^.events.$', url) or re.search('^.event.$', url) or re.search('^.calendar.$', url) or re.search('^.page.$', url):
             return False
 
         #parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
@@ -113,7 +111,7 @@ def is_valid(url):
 
 def cust_tokenize(resp):
     #stop words list from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
-    stops = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you','your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his','himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself','they', 'them', 'their', 'theirs', 'themselves', 'what', 'which','who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are','was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having','do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if','or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for','with', 'about', 'against', 'between', 'into', 'through', 'during','before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in','out', 'on', 'off', 'over', 'under', 'again', 'further', 'then','once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any','both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no','nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's','t', 'can', 'will', 'just', 'don', 'should', 'now', 'id', 'var','function', 'js', 'd', 'script', '\'script', 'fjs', 'document', 'r','b', 'g', 'e', '\'s', 'c', 'f', 'h', 'l', 'k']
+    stops = ['a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves']
     soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
     raw_text = soupt.get_text() #gets all the text from the url, returns a string
     tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
@@ -123,56 +121,32 @@ def cust_tokenize(resp):
     no_stop_words = [w for w in raw_words if w.lower() not in stops] #list of high-value words excluding common, nondescriptive words (conjunctions)
     return no_stop_words
 
+def get_pg_length (resp):
+    #print("get_pg_len: ", resp)
+    if not resp or not resp.raw_response or  not resp.raw_response.content:
+        return 0
+    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
+    raw_text = soupt.get_text() #gets all the text from the url, returns a string
+    #tokens is the list of all the words on the page
+    tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
+    return len(tokens)
 
-def robots_text_file(url, domains, config, logger) -> bool:
-
-    parsed = urlparse(url)
-    dom = parsed.hostname
-    if dom in domains:
-        print("indomain")
-        _,disallows, entire_domain = domains[dom]
-        if not entire_domain:
-            return False#IF there is a "/" we would be disallowed on the entire subdomain
-
-        for i in disallows:
-            if i in parsed.geturl():
-                return False# there is a disallowed website
-
-        return True
-        
-    else:
-        rp = urllib.robotparser.RobotFileParser()
-        robot_url = "https://"+ parsed.hostname + '/robots.txt'
-
-        rp.set_url(robot_url)
-        rp.read()
+def get_top_common_words(resp):
+    dicta = {}
+    if not resp or not resp.raw_response or  not resp.raw_response.content:
+        return dicta
+    #print(resp.raw_response)
+    no_stop_words = cust_tokenize(resp)
+    #tokens is the list of all the words on the page
     
-        #roblox = download(robot_url, config, logger)
+    for tok in no_stop_words:
+        tok = tok.lower()
+        if tok not in dicta:
+            dicta[tok] = 1
+        else:
+            dicta[tok] += 1
+    return dicta
 
-#        if roblox.status != 200:
-#            return True
-        
-        #parsed_roblox = BeautifulSoup(roblox.raw_response.content.decode('utf-8', 'ignore'), "lxml")
-        #print(parsed_roblox)
-        #roblox_txt = parsed_roblox.get_text() #returns /robot.txt as a string
-        #print(roblox_txt)
-        #roblox_splitted = roblox_txt.splitlines()
-        #print(roblox_splitted)
-        return True
-
-    #Parse the url. grab the hostname/domain-  check if its in the valid domain
-        #if it's not
-            #add the new subdomain into the unique subdomain list.
-            #determine if robots.txt file exist
-                #Parse if it it does. Adding all of the disallows and sitemaps respectively
-                #check if / is in disallow, change respectivly value
-                #Validate
-            #not continue
-        #It is.
-            #Validate
-
-        #Validate
-            #check if allowed to go in website
-            #check all disallowed list against url. contuine or don't contunie
-    
-    pass
+def top_fifty_words(freq):
+    allTokens = sorted(freq.items(), key = lambda x: (x[1], -x[0]), reverse = True)
+    return allTokens[:50]
