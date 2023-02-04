@@ -4,99 +4,130 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from utils.download import download
 import urllib.robotparser
-
-
+from collections import defaultdict
 
 def scraper(url, resp):
+    """
+    Scrapes through links using baseline url
+
+    :param url: Starting url to begin crawling
+    :param resp: Response from downloading website
+    :return: List of links if they are valid (check is_valid for requirements)
+    """
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
-    # Implementation required.
-    # url: the URL that was used to get the page
-    # resp.url: the actual url of the page
-    # resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
-    # resp.error: when status is not 200, you can check the error here, if needed.
-    # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
-    #         resp.raw_response.url: the url, again
-    #         resp.raw_response.content: the content of the page!
-    
-    # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    """
+    Extracts hyperlinks from each page and returns a list of hyperlinks
+
+    :param url: Starting url to begin crawling
+    :param resp: Response from downloading website
+        resp.url: the actual url of the page
+        resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
+        resp.error: when status is not 200, you can check the error here, if needed.
+        resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
+            resp.raw_response.url: the url, again
+            resp.raw_response.content: the content of the page!
+    :return: List with hyperlinks (str) scrapped from resp.raw_response.content
+    """
+    # Error case for any pages with status code != 200
     if resp.status != 200:
-        # Error case for any pages with status codes not = 200
+        # Print error and return empty list --> no hyperlinks extracted
         print(resp.error) 
         return list()
-    
 
-    #soupt = BeautifulSoup(resp.raw_response.content, "lxml") #create beautiful soup object
-    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
+    # Create beautiful soup object - helps to parse html file
+    # Example soupt value -> [<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>]
+    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml")
 
-    no_stop_words = cust_tokenize(resp) #call tokenize function to get all the valuable words on the webpage, as a list
+    # Call tokenize function to get all the valuable words on the webpage, as a list
+    no_stop_words = cust_tokenize(resp) 
 
     # Create list and set objects to store hyperlinks : nonunqiue, unique
     hyperlink_list = list()
     visited_set = set()
 
-    # Example soupt value -> [<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>]
+    # Store unparsed href and # of headings --> determines information value of page
     unparsed_href_list = soupt.find_all("a")
     num_of_headings = soupt.find_all(["h1", "h2", "h3"])
-    #our definition of a webpage with low information value would be:
-        #under 100 words AND no headings AND less than 2 hyperlinks
-    if (len(no_stop_words) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2) or (len(resp.raw_response.content) < 500): #checking if the page is a low value information page
-        print("page is low information value")
+
+    # Our definition of low-info value webpage:
+        # Under 100 non-stop words AND no headings AND less than 2 hyperlinks OR raw_content < 500 words
+    if (len(no_stop_words) < 100 and len(num_of_headings) == 0 and len(unparsed_href_list) < 2) or (len(resp.raw_response.content) < 500): 
+        # Printing out specifics of page that led to error, return empty list
+        print("Page is low information value")
+        print(f"Number of non-stop words: {len(no_stop_words)} | Number of headings: {len(num_of_headings)}")
+        print(f"Length of unparsed hrefs: {len(unparsed_href_list)} | Length of raw_response content: {len(resp,raw_response.content)}")
         return list()
 
-    #go through soupt list, get only hyperlinks 
+    # Go through soupt href list, get only hyperlinks 
     for link in unparsed_href_list:
         web_url_string = link.get('href')
+
+        # Keep looping until hyperlink is found
         if not web_url_string:
             continue
+        
+        # Grab url and check if it has not been visited
         defrag_url = web_url_string.split("#")[0]
         if defrag_url not in visited_set:
+            # Parse URL and get rid of URL fragment
             parsed = urlparse(defrag_url)
-            parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
+            parsed._replace(fragment="").geturl 
+
+            # Append to list/set for checking if hyperlink exists in future iterations
             hyperlink_list.append(defrag_url)
             visited_set.add(defrag_url)
 
     return hyperlink_list
 
 def is_valid(url):
-    # Decide whether to crawl this url or not. 
-    # If you decide to crawl it, return True; otherwise return False.
-    # There are already some conditions that return False.
-    valid_domain_names = [".informatics.uci.edu/", ".stat.uci.edu/"]
+    """
+    Determine whether to crawl URL or not
+
+    Returns True if crawl, else False
+
+    :param url: URL to check if valid
+    :return: True or False if valid
+    """
+
+    valid_domain_names = [".ics.uci.edu/", ".cs.uci.edu/", ".stat.uci.edu/", ".informatics.uci.edu/"]
+   
+    # Try/Except in case parsed value is not of correct type --> raises error
     try:
+        # Parse url and get specific parts 
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        #check if domain is correct
+
+        # Check if parsed domain is valid and add to container 
         in_domain = []
         for i in valid_domain_names:
-            #print(parsed.hostname)
             in_domain.append(i in parsed.geturl())
 
+        # If domain list empty, return False 
         if not any(in_domain):
-            #print(url, in_domain)
             return False
 
-
-        #Check if adhears to robot.txt file 
+        # Try/Except to check if robot.txt file rules are followed -> passes if not, ignores txt file
         try:
+            robot_txt_url = parsed.scheme+ "://"+ parsed.hostname + '/robots.txt'
+
+            # Create Robot File Parser object and read robot file
             rp = urllib.robotparser.RobotFileParser()
-            robot_url = parsed.scheme+ "://"+ parsed.hostname + '/robots.txt'
-            rp.set_url(robot_url)
+            rp.set_url(robot_txt_url)
             rp.read()
-            #If true than keep validating
+
+            # If True, continue validating 
             if not rp.can_fetch("*", parsed.geturl()):
-                return False
+                return False  
         except:
             pass
-            
-        #calendar stuff
-        if re.search('^.*calendar.*$', url):
-            return False
 
-        #parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
+        # Prevents infinite loops in Calendar sites through regex by not crawling specific dates/events
+        if re.search('^.events.$', url) or re.search('^.event.$', url) or re.search('^.calendar.$', url):
+            return False
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -106,73 +137,75 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
-
     except TypeError:
-        print ("TypeError for ", parsed)
-        raise
+        print ("TypeError for: ", parsed)
+        raise 
 
 def cust_tokenize(resp):
-    #stop words list from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
-    stops = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you','your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his','himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself','they', 'them', 'their', 'theirs', 'themselves', 'what', 'which','who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are','was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having','do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if','or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for','with', 'about', 'against', 'between', 'into', 'through', 'during','before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in','out', 'on', 'off', 'over', 'under', 'again', 'further', 'then','once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any','both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no','nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's','t', 'can', 'will', 'just', 'don', 'should', 'now', 'id', 'var','function', 'js', 'd', 'script', '\'script', 'fjs', 'document', 'r','b', 'g', 'e', '\'s', 'c', 'f', 'h', 'l', 'k']
-    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
-    raw_text = soupt.get_text() #gets all the text from the url, returns a string
-    tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
-    text = nltk.Text(tokens) #code from line 32-35 from https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
+    """
+    Receives resp object and returns only non-stop words in website
+
+    :param resp: Response from downloading website
+    :return: List of non-stop words
+    """
+    # Stop words list gathered from Assignment 2 page
+    stops = ['a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves']
+    
+    # Create BeautifulSoup object and retrieve all text from page
+    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") 
+    raw_text = soupt.get_text() 
+
+    # Use NLTK to tokenize into list & get text
+    # Code referenced from -> https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
+    tokens = nltk.word_tokenize(raw_text) 
+    text = nltk.Text(tokens) 
+
     nonPunct = re.compile('.*[A-Za-z].*') 
-    raw_words = [w for w in text if nonPunct.match(w)] #list of every single word without punctuation on the webpage
-    no_stop_words = [w for w in raw_words if w.lower() not in stops] #list of high-value words excluding common, nondescriptive words (conjunctions)
+    # List of every single word without punctuation on the webpage, including stop words
+    raw_words = [w for w in text if nonPunct.match(w)] 
+    
+    # List of high-value words excluding common, nondescriptive words (conjunctions)
+    no_stop_words = [word for word in raw_words if word.lower() not in stop_words] 
+   
     return no_stop_words
 
+def get_pg_length (resp):
+    """
+    Retrieve page length from resp
 
-def robots_text_file(url, domains, config, logger) -> bool:
+    :param resp: Response from downloading website
+    :return: Length of page
+    """
+    print("Page length (get_pg_len): ", resp)
+    # Create beautiful soup object
+    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") 
 
-    parsed = urlparse(url)
-    dom = parsed.hostname
-    if dom in domains:
-        print("indomain")
-        _,disallows, entire_domain = domains[dom]
-        if not entire_domain:
-            return False#IF there is a "/" we would be disallowed on the entire subdomain
+    #Grabs all text -> tokenizes and adds to list
+    raw_text = soupt.get_text() 
+    tokens = nltk.word_tokenize(raw_text) 
+    return len(tokens)
 
-        for i in disallows:
-            if i in parsed.geturl():
-                return False# there is a disallowed website
+def get_top_common_words(resp):
+    """
+    Grabs all words and returns a dictionary of the most common tokens
 
-        return True
-        
-    else:
-        rp = urllib.robotparser.RobotFileParser()
-        robot_url = "https://"+ parsed.hostname + '/robots.txt'
+    :param resp: Response from downloading website
+    :return: Dictionary of words with frequencies
+    """
+    word_frequencies = defaultdict(int)
 
-        rp.set_url(robot_url)
-        rp.read()
+    # Tokenizes to only get non-stop words
+    no_stop_words = cust_tokenize(resp)
     
-        #roblox = download(robot_url, config, logger)
+    # Tokens is the list of all the words on the page
+    tokens = nltk.word_tokenize(no_stop_words) #get all the tokens from the raw_text string, returns a list
 
-#        if roblox.status != 200:
-#            return True
-        
-        #parsed_roblox = BeautifulSoup(roblox.raw_response.content.decode('utf-8', 'ignore'), "lxml")
-        #print(parsed_roblox)
-        #roblox_txt = parsed_roblox.get_text() #returns /robot.txt as a string
-        #print(roblox_txt)
-        #roblox_splitted = roblox_txt.splitlines()
-        #print(roblox_splitted)
-        return True
-
-    #Parse the url. grab the hostname/domain-  check if its in the valid domain
-        #if it's not
-            #add the new subdomain into the unique subdomain list.
-            #determine if robots.txt file exist
-                #Parse if it it does. Adding all of the disallows and sitemaps respectively
-                #check if / is in disallow, change respectivly value
-                #Validate
-            #not continue
-        #It is.
-            #Validate
-
-        #Validate
-            #check if allowed to go in website
-            #check all disallowed list against url. contuine or don't contunie
+    # Iterates through tokens, increments dictionary key pair value by 1 
+    for token in tokens:
+        word_frequencies[token.lower()] += 1
     
-    pass
+    return word_frequencies
+
+def top_fifty_words(freq):
+    allTokens = sorted(freq.items(), key = lambda x: (x[1], -x[0]), reverse = True)
+    return allTokens[:50]
