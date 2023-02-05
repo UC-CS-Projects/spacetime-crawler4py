@@ -10,6 +10,8 @@ from collections import Counter
 import PartA, PartB
 import urllib.robotparser
 from urllib.parse import urlparse
+from bs4 import SoupStrainer
+import chardet, lxml
 
 
 class Worker(Thread):
@@ -59,35 +61,50 @@ class Worker(Thread):
             
             resp = download(tbd_url, self.config, self.logger)
 
+            if resp.status != 200:
+                # Error case for any pages with status codes not = 200
+                continue
+
+            only_a_tags = SoupStrainer("a")
+            soupt = None
+            if resp and resp.raw_response and resp.raw_response.content:
+                soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml", parse_only=only_a_tags) #create beautiful soup object
             if resp:# and resp.status == 200 and resp.raw_response:
                 this_resp = scraper.get_top_common_words(resp)
+                #print(this_resp)
                 for k,v in this_resp.items():
                     if k in self.most_common_words:
                         self.most_common_words[k] = v +this_resp[k]
+                    else:
+                        self.most_common_words[k] = v
 
+
+            #print(self.most_common_words)
 #                    self.most_common_words.update() #add the new scraped words to the global dictionary variable
 
 
             url_is_parsed = urlparse(resp.url)
             url_is_parsed = url_is_parsed.hostname
+            
+            if "www." in url_is_parsed:
+                url_is_parsed = url_is_parsed.split('www.')[1] #getting rid of the "www."
             if url_is_parsed in self.unique_subdomains:
                 self.unique_subdomains[url_is_parsed] +=1
             else:
                 self.unique_subdomains[url_is_parsed] =1
 
                     
-            if self.len_curr_longest_webpage < scraper.get_pg_length(resp):
+            if self.len_curr_longest_webpage < scraper.get_pg_length(resp, soupt):
                 self.curr_longest_webpage = resp.url
-                self.len_curr_longest_webpage = scraper.get_pg_length(resp)
+                self.len_curr_longest_webpage = scraper.get_pg_length(resp, soupt)
+            #print(self.len_curr_longest_webpage)
 
             self.logger.info(
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
             
             #if scraper.robots_text_file(tbd_url, valid_domains, self.config, self.logger):
-            #print("before scraper")
-            scraped_urls = scraper.scraper(tbd_url, resp)
-            #print("after scraper")
+            scraped_urls = scraper.scraper(tbd_url, resp, soupt)
 
             #if self.find_intersection(list_of_resp, resp): #call find_intersection to detect duplicate webpages
                 #list_of_resp.append(resp) #IN THE CASE IT IS NOT A DUPLICATE, APPEND THE NEW UNIQUE WEBPAGE
@@ -95,8 +112,10 @@ class Worker(Thread):
                 if scraped_url not in new_visited_links:
                     self.frontier.add_url(scraped_url)
                     new_visited_links.add(scraped_url) #should handle infinite traps. does not account for session IDs and URL
+            
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
-        print(scraper.top_fifty_words(self.most_common_words)) #prints the top 50 list of all the words from most frequent to least frequent
 
+        print(self.len_curr_longest_webpage)
+        print(scraper.top_fifty_words(self.most_common_words)) #prints the top 50 list of all the words from most frequent to least frequent
         print(self.unique_subdomains)
