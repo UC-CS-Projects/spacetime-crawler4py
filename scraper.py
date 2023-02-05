@@ -128,12 +128,12 @@ def get_pg_length (resp, soupt):
     tokens = nltk.word_tokenize(raw_text) #get all the tokens from the raw_text string, returns a list
     return len(tokens)
 
-def get_top_common_words(resp):
+def get_top_common_words(resp,soupt):
     dicta = {}
     if not resp or not resp.raw_response or  not resp.raw_response.content:
         return dicta
     #print(resp.raw_response)
-    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
+    # soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
     no_stop_words = cust_tokenize(soupt)
     #tokens is the list of all the words on the page
     

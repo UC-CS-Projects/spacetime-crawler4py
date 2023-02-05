@@ -65,12 +65,12 @@ class Worker(Thread):
                 # Error case for any pages with status codes not = 200
                 continue
 
-            only_a_tags = SoupStrainer("a")
+            #only_a_tags = SoupStrainer("a")
             soupt = None
             if resp and resp.raw_response and resp.raw_response.content:
-                soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml", parse_only=only_a_tags) #create beautiful soup object
+                soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
             if resp:# and resp.status == 200 and resp.raw_response:
-                this_resp = scraper.get_top_common_words(resp)
+                this_resp = scraper.get_top_common_words(resp, soupt)
                 #print(this_resp)
                 for k,v in this_resp.items():
                     if k in self.most_common_words:
