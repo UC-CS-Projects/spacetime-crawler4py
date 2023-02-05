@@ -85,7 +85,10 @@ class Worker(Thread):
                 f"using cache {self.config.cache_server}.")
             
             #if scraper.robots_text_file(tbd_url, valid_domains, self.config, self.logger):
+            #print("before scraper")
             scraped_urls = scraper.scraper(tbd_url, resp)
+            #print("after scraper")
+
             #if self.find_intersection(list_of_resp, resp): #call find_intersection to detect duplicate webpages
                 #list_of_resp.append(resp) #IN THE CASE IT IS NOT A DUPLICATE, APPEND THE NEW UNIQUE WEBPAGE
             for scraped_url in scraped_urls:
@@ -95,8 +98,5 @@ class Worker(Thread):
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)
         print(scraper.top_fifty_words(self.most_common_words)) #prints the top 50 list of all the words from most frequent to least frequent
-        #allTokens = sorted(self.unique_subdomains.items(), key = lambda x: (x[0], -x[1]))
-        #allTokens = {key: value for key, value in sorted(self.unique_subdomains.items())}
-        # for token,freq in sorted(self.unique_subdomains.items(), key = lambda x: (x[0], -x[1])):
-        #     print(token,freq)
+
         print(self.unique_subdomains)

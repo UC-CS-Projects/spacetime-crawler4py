@@ -1,12 +1,15 @@
 import re, lxml, nltk
 nltk.download('punkt')
 from bs4 import BeautifulSoup
+from bs4 import SoupStrainer
 from urllib.parse import urlparse
 from utils.download import download
 import urllib.robotparser
+import chardet
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
+    #print("finsihed extract")
     return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
@@ -25,11 +28,16 @@ def extract_next_links(url, resp):
         print(resp.error) 
         return list()
     
+    only_a_tags = SoupStrainer("a")
 
     #soupt = BeautifulSoup(resp.raw_response.content, "lxml") #create beautiful soup object
-    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml") #create beautiful soup object
+    #print('/t before beatiful')
+    soupt = BeautifulSoup(resp.raw_response.content.decode('utf-8', 'ignore'), "lxml", parse_only=only_a_tags) #create beautiful soup object
+    #print('/t after beatiful')
 
+    #print('/tt before token')
     no_stop_words = cust_tokenize(resp) #call tokenize function to get all the valuable words on the webpage, as a list
+    #print('/tt after token')
 
     # Create list and set objects to store hyperlinks : nonunqiue, unique
     hyperlink_list = list()
@@ -77,7 +85,7 @@ def is_valid(url):
             #print(url, in_domain)
             return False
 
-
+        
         #Check if adheres to robot.txt file 
         try:
             rp = urllib.robotparser.RobotFileParser()
@@ -91,8 +99,11 @@ def is_valid(url):
             pass
             
         #calendar stuff
-        if re.search('^.events.$', url) or re.search('^.event.$', url) or re.search('^.calendar.$', url) or re.search('^.page.$', url):
+        #('wics.ics' in url) or 
+        if ('page' in url) or ('event' in url) or ('calendar' in url) or ('events' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query):
             return False
+        # if re.search(r'^.events.$', url) or re.search(r'^.event.$', url) or re.search(r'^.calendar.$', url) or re.search(r'^.page.$', url):
+        #     return False
 
         #parsed._replace(fragment="").geturl #getting rid of the fragment of the URL
         return not re.match(
