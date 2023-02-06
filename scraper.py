@@ -68,7 +68,7 @@ def extract_next_links(url, resp, soupt):
 
         # Grab url and check if it has not been visited    
         defrag_url = web_url_string.split("#")[0]
-        if defrag_url.strip() == "":
+        if defrag_url.strip() == "" or "id=" in defrag_url:
             continue
         #if defrag_url not in visited_set:
             # Parse URL and get rid of URL fragment
@@ -96,7 +96,7 @@ def extract_next_links(url, resp, soupt):
                     new_path = parsed.path
                     while True:
                         if (len(new_path) > 3 and "../" == new_path[:3]):
-                            counter_path += 1
+                            counter_path += 2
                             new_path = new_path[3:]
                         elif (len(new_path) >2 and "./" == new_path[:2]):
                             #counter_path += 1
@@ -161,7 +161,7 @@ def is_valid(url):
             return False
             
         # Prevents infinite loops in Calendar sites through regex by not crawling specific dates/events
-        if ('page' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query):
+        if ('page' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query) or ('id=' in parsed.query):
             return False
 
         return not re.match(
