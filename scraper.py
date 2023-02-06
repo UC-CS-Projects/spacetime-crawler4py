@@ -201,5 +201,5 @@ def top_fifty_words(freq):
     :param freq: Frequency of words via dictionary
     :return: Sorted container with 50 values
     """
-    allTokens = sorted(freq.items(), key = lambda x: (x[1], -x[0]), reverse = True)
+    allTokens = sorted(freq.items(), key = lambda x: (x[1], x[0]), reverse = True)
     return allTokens[:50]
