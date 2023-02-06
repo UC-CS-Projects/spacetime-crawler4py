@@ -54,8 +54,8 @@ def extract_next_links(url, resp, soupt):
     if (len(no_stop_words) < 100 and len(unparsed_href_list) < 2) or (len(resp.raw_response.content) < 500):
         # Printing out specifics of page that led to error, return empty list
         print("Page is low information value")
-        print(f"Number of non-stop words: {len(no_stop_words)} | Number of headings: {len(num_of_headings)}")
-        print(f"Length of unparsed hrefs: {len(unparsed_href_list)} | Length of raw_response content: {len(resp,raw_response.content)}")
+        print(f"Number of non-stop words: {len(no_stop_words)}")
+        print(f"Length of unparsed hrefs: {len(unparsed_href_list)} | Length of raw_response content: {len(resp.raw_response.content)}")
         return list()
 
     # Go through soupt href list, get only hyperlinks 
@@ -68,14 +68,40 @@ def extract_next_links(url, resp, soupt):
 
         # Grab url and check if it has not been visited    
         defrag_url = web_url_string.split("#")[0]
+
         if defrag_url not in visited_set:
             # Parse URL and get rid of URL fragment
             parsed = urlparse(defrag_url)
-            parsed._replace(fragment="").geturl 
-           
-            # Append to list/set for checking if hyperlink exists in future iterations            
-            hyperlink_list.append(defrag_url)
-            visited_set.add(defrag_url)
+            #if there's an absoulte path in a the form of "//www.google.com"
+        #             "//www.ics.uci.edu/ihateurmom/hermashedpotatesareass"
+        # "/hello"
+        # "//www.com"
+            if parsed.scheme == "":
+                if parsed.netloc != "": #"//www.google.com"
+                    new_absolute_link = parsed._replace(fragment="").geturl()
+                    hyperlink_list.append("http://"+ new_absolute_link)
+                    visited_set.add("http://"+ new_absolute_link)
+                else:
+                    if ".." in parsed.path: # "../ugrad"
+                        orginal_website = urlparse(resp.url)
+                        if orginal_website.path != "/":
+                            paths_list = resp.url.split("/")
+                            if paths_list[-1] == "":
+                                paths_list[-2] =  parsed.path[2:]
+                            else:
+                                paths_list[-1] =  parsed.path[2:]
+                            new_website = orginal_website._replace(path = "/".join(paths_list)).geturl()
+                            hyperlink_list.append(new_website)
+                            visited_set.add(new_website)
+                    else:
+                        # "/ugrad"
+                        hyperlink_list.append(resp.url+parsed.path)
+                        visited_set.add(resp.url+parsed.path)
+            else:
+
+                # Append to list/set for checking if hyperlink exists in future iterations            
+                hyperlink_list.append(defrag_url)
+                visited_set.add(defrag_url)
 
     return hyperlink_list
 
@@ -142,6 +168,7 @@ def cust_tokenize(soupt):
     # Code referenced from -> https://www.bogotobogo.com/python/Flask/Python_Flask_App_2_BeautifulSoup_NLTK_Gunicorn_PM2_Apache.php
     tokens = nltk.word_tokenize(raw_text)
     text = nltk.Text(tokens) 
+    nonPunct = re.compile('.*[A-Za-z].*') 
 
     # List of every single word without punctuation on the webpage, including stop words
     raw_words = [w for w in text if nonPunct.match(w)] 

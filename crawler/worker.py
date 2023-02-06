@@ -59,9 +59,9 @@ class Worker(Thread):
             intersect = keys1.intersection(keys2)
 
             # Checks for exact duplicates first, then if similar
-            if len(inter) == len(keys1) or len(inter) == len(keys2):
+            if len(intersect) == len(keys1) or len(intersect) == len(keys2):
                 return False
-            if len(inter) / len(keys1.union(keys2)) > 0.8:
+            if len(intersect) / len(keys1.union(keys2)) > 0.8:
                 return False
         return True
         
