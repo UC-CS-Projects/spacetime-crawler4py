@@ -68,40 +68,69 @@ def extract_next_links(url, resp, soupt):
 
         # Grab url and check if it has not been visited    
         defrag_url = web_url_string.split("#")[0]
-
-        if defrag_url not in visited_set:
+        if defrag_url.strip() == "":
+            continue
+        #if defrag_url not in visited_set:
             # Parse URL and get rid of URL fragment
-            parsed = urlparse(defrag_url)
-            #if there's an absoulte path in a the form of "//www.google.com"
-        #             "//www.ics.uci.edu/ihateurmom/hermashedpotatesareass"
-        # "/hello"
-        # "//www.com"
-            if parsed.scheme == "":
-                if parsed.netloc != "": #"//www.google.com"
-                    new_absolute_link = parsed._replace(fragment="").geturl()
-                    hyperlink_list.append("http://"+ new_absolute_link)
-                    visited_set.add("http://"+ new_absolute_link)
-                else:
-                    if ".." in parsed.path: # "../ugrad"
-                        orginal_website = urlparse(resp.url)
-                        if orginal_website.path != "/":
-                            paths_list = resp.url.split("/")
-                            if paths_list[-1] == "":
-                                paths_list[-2] =  parsed.path[2:]
-                            else:
-                                paths_list[-1] =  parsed.path[2:]
-                            new_website = orginal_website._replace(path = "/".join(paths_list)).geturl()
-                            hyperlink_list.append(new_website)
-                            visited_set.add(new_website)
-                    else:
-                        # "/ugrad"
-                        hyperlink_list.append(resp.url+parsed.path)
-                        visited_set.add(resp.url+parsed.path)
-            else:
+        parsed = urlparse(defrag_url)
+            #new link we scraped
+        orginal_website = urlparse(resp.url)
 
+        if parsed.scheme.strip() == "":
+            if parsed.netloc != "": #"//www.google.com"
+                new_absolute_link = parsed._replace(fragment="").geturl()
+                new_absolute_link = new_absolute_link[2:]
+                new_scraped_link = "http://"+ new_absolute_link
+            else:
+                if len(parsed.path) >0 and "." == parsed.path[0]: # "./ugrad/academia or ugrad/academia"
+
+                    #Relative path
+                    #while loop
+                        #counter
+                        #while "../" and correct length >3 ) or "./" and correct length >2
+                    #print("defrag: ", defrag_url)
+                    counter_path = 0
+                    current_path = orginal_website.path
+
+                        #parsed/defrag/new_url path
+                    new_path = parsed.path
+                    while True:
+                        if (len(new_path) > 3 and "../" == new_path[:3]):
+                            counter_path += 1
+                            new_path = new_path[3:]
+                        elif (len(new_path) >2 and "./" == new_path[:2]):
+                            #counter_path += 1
+                            new_path = new_path[2:]
+                        else:
+                            break
+                    current_path_splitted = current_path.split("/")
+                    for i in range(counter_path):
+                        if len(current_path_splitted) > 0:
+                            current_path_splitted.pop()
+                        else:
+                            break
+                    new_realtive_link = orginal_website._replace(path= "/".join(current_path_splitted)+ "/"+new_path).geturl()
+                    new_scraped_link = new_realtive_link
+                    #print("new_realtive_link: ", new_realtive_link)
+
+                else:
+                        # "/ugrad"
+                        #Absoulte path
+                    orginal_website = orginal_website._replace(path = parsed.path)
+                    orginal_website = orginal_website._replace(fragment="")
+                    orginal_website = orginal_website._replace(params = "")
+                    new_absolute_link = orginal_website._replace(query ="").geturl()
+                    new_scraped_link = new_absolute_link
+        else:
+                #print("norm")
                 # Append to list/set for checking if hyperlink exists in future iterations            
-                hyperlink_list.append(defrag_url)
-                visited_set.add(defrag_url)
+            new_scraped_link = defrag_url
+
+        
+        if new_scraped_link not in visited_set:
+            hyperlink_list.append(new_scraped_link)
+            visited_set.add(new_scraped_link)
+
 
     return hyperlink_list
 
