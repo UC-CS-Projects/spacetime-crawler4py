@@ -82,7 +82,7 @@ def extract_next_links(url, resp, soupt):
                 new_absolute_link = new_absolute_link[2:]
                 new_scraped_link = "http://"+ new_absolute_link
             else:
-                if len(parsed.path) >0 and "." == parsed.path[0]: # "./ugrad/academia or ugrad/academia"
+                if len(parsed.path) >2 and "." == parsed.path[0]: # "./ugrad/academia or ugrad/academia"
 
                     #Relative path
                     #while loop
@@ -95,10 +95,10 @@ def extract_next_links(url, resp, soupt):
                         #parsed/defrag/new_url path
                     new_path = parsed.path
                     while True:
-                        if (len(new_path) > 3 and "../" == new_path[:3]):
+                        if (len(new_path) > 2 and "../" == new_path[:3]):
                             counter_path += 2
                             new_path = new_path[3:]
-                        elif (len(new_path) >2 and "./" == new_path[:2]):
+                        elif (len(new_path) >1 and "./" == new_path[:2]):
                             #counter_path += 1
                             new_path = new_path[2:]
                         else:
@@ -161,7 +161,7 @@ def is_valid(url):
             return False
             
         # Prevents infinite loops in Calendar sites through regex by not crawling specific dates/events
-        if ('page' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query) or ('id=' in parsed.query):
+        if ('wics.ics.uci.edu/events/' in url) or ('page' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query) or ('id=' in parsed.query):
             return False
 
         return not re.match(
