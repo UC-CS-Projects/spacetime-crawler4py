@@ -152,7 +152,7 @@ def is_valid(url):
             return False
             
         # Prevents infinite loops in Calendar sites through regex by not crawling specific dates/events
-        if ('wics.ics.uci.edu/events/' in url) or ('page' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query) or ('id=' in parsed.query):
+        if ('page' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query) or ('id=' in parsed.query):
             return False
 
         return not re.match(
