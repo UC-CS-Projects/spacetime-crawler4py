@@ -83,23 +83,16 @@ def extract_next_links(url, resp, soupt):
                 new_scraped_link = "http://"+ new_absolute_link
             else:
                 if len(parsed.path) >2 and "." == parsed.path[0]: # "./ugrad/academia or ugrad/academia"
-
-                    #Relative path
-                    #while loop
-                        #counter
-                        #while "../" and correct length >3 ) or "./" and correct length >2
-                    #print("defrag: ", defrag_url)
                     counter_path = 0
                     current_path = orginal_website.path
 
-                        #parsed/defrag/new_url path
+                    #parsed/defrag/new_url path
                     new_path = parsed.path
                     while True:
                         if (len(new_path) > 2 and "../" == new_path[:3]):
                             counter_path += 2
                             new_path = new_path[3:]
                         elif (len(new_path) >1 and "./" == new_path[:2]):
-                            #counter_path += 1
                             new_path = new_path[2:]
                         else:
                             break
@@ -111,7 +104,6 @@ def extract_next_links(url, resp, soupt):
                             break
                     new_realtive_link = orginal_website._replace(path= "/".join(current_path_splitted)+ "/"+new_path).geturl()
                     new_scraped_link = new_realtive_link
-                    #print("new_realtive_link: ", new_realtive_link)
 
                 else:
                         # "/ugrad"
@@ -122,7 +114,6 @@ def extract_next_links(url, resp, soupt):
                     new_absolute_link = orginal_website._replace(query ="").geturl()
                     new_scraped_link = new_absolute_link
         else:
-                #print("norm")
                 # Append to list/set for checking if hyperlink exists in future iterations            
             new_scraped_link = defrag_url
 
