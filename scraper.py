@@ -152,17 +152,17 @@ def is_valid(url):
             return False
             
         # Prevents infinite loops in Calendar sites through regex by not crawling specific dates/events
-        if ('page' in url) or ('wp-json' in parsed.path) or ('pdf' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query) or ('id=' in parsed.query):
+        if ('page' in url) or ('wp-json' in parsed.path) or ('ical=' in parsed.query) or ('share=' in parsed.query) or ('id=' in parsed.query):
             return False
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
-            + r"|png|tiff?|mid|mp2|mp3|mp4"
+            + r"|png|tiff?|mid|mp2|mp3|mp4|mpg"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
-            + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+            + r"|ps|eps|tex|ppt|pptx|ppsx|doc|docx|xls|xlsx|names"
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
-            + r"|epub|dll|cnf|tgz|sha1"
-            + r"|thmx|mso|arff|rtf|jar|csv"
+            + r"|epub|dll|cnf|tgz|sha1|sql|java|svg|sh"
+            + r"|thmx|mso|arff|rtf|jar|csv|py"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
     except TypeError:
         print ("TypeError for ", parsed)
